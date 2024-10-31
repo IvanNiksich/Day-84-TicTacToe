@@ -57,8 +57,70 @@ def choose_order():
     return random.choice(["Player", "AI"])
 
 
+def minimax(board, depth, is_maximizing):
+    # Check if the game is over
+    if check_winning():
+        return 1 if is_maximizing else -1
+    elif all(cell != " " for row in board for cell in row):  # Draw
+        return 0
+
+    if is_maximizing:
+        best_score = float('-inf')
+        for row in range(3):
+            for col in range(3):
+                if board[row][col] == " ":
+                    board[row][col] = "O"
+                    score = minimax(board, depth + 1, False)
+                    board[row][col] = " "
+                    best_score = max(score, best_score)
+        return best_score
+    else:
+        # Check for immediate block move
+        for row in range(3):
+            for col in range(3):
+                if board[row][col] == " ":
+                    board[row][col] = "X"
+                    if check_winning():
+                        board[row][col] = " "
+                        return -1  # Prioritize blocking
+                    board[row][col] = " "
+
+        # Continue minimax calculation if no immediate block is needed
+        best_score = float('inf')
+        for row in range(3):
+            for col in range(3):
+                if board[row][col] == " ":
+                    board[row][col] = "X"
+                    score = minimax(board, depth + 1, True)
+                    board[row][col] = " "
+                    best_score = min(score, best_score)
+        return best_score
+
+
 def ai_turn():
-    pass
+    best_score = float('-inf')
+    best_move = None
+    for row in range(3):
+        for col in range(3):
+            if board_values[row][col] == " ":
+                board_values[row][col] = "O"  # AI's tentative move
+                score = minimax(board_values, 0, False)
+                board_values[row][col] = " "  # Undo move
+                if score > best_score:
+                    best_score = score
+                    best_move = (row, col)
+
+    if best_move:
+        row, col = best_move
+        board_values[row][col] = "O"
+        print("\nAI chose:")
+        print_board()
+
+    # Check if AI has won
+    if check_winning():
+        print("AI wins!")
+        reset_board()
+        play_game()
 
     return
 
@@ -142,7 +204,6 @@ def reset_board():
         for j in range(0, 3):
             board_values[i][j] = " "
     return
-
 
 
 # Press the green button in the gutter to run the script.
