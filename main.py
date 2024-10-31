@@ -12,7 +12,7 @@ def print_board():
              f"  ---+---+---\n"
              f"2  {board_values[1][0]} | {board_values[1][1]} | {board_values[1][2]} \n"
              f"  ---+---+---\n"
-             f"3  {board_values[2][0]} | {board_values[2][1]} | {board_values[2][2]} ")
+             f"3  {board_values[2][0]} | {board_values[2][1]} | {board_values[2][2]} \n")
     print(board)
     return
 
@@ -57,14 +57,54 @@ def choose_order():
     return random.choice(["Player", "AI"])
 
 
-def minimax(board, depth, is_maximizing):
-    # Check if the game is over
-    if check_winning():
-        return 1 if is_maximizing else -1
-    elif all(cell != " " for row in board for cell in row):  # Draw
-        return 0
+def ai_turn():
+    best_score = float('-inf')
+    best_move = None
 
-    if is_maximizing:
+    print("Current board state before AI's turn:")
+    print_board()
+
+    for row in range(3):
+        for col in range(3):
+            if board_values[row][col] == " ":
+                # Try the move
+                board_values[row][col] = "O"
+                score = minimax(board_values, 0, False)
+                board_values[row][col] = " "
+
+                # print(f"Score for placing O at {chr(col + 65)}{row + 1}: {score}")
+
+                if score > best_score:
+                    best_score = score
+                    best_move = (row, col)
+
+    if best_move:
+        row, col = best_move
+        board_values[row][col] = "O"
+        print("AI places an 'O' at", chr(col + 65), row + 1)
+
+    else:
+        # If there is no best move, pick a random empty cell
+        empty_cells = [(r, c) for r in range(3) for c in range(3) if board_values[r][c] == " "]
+        if empty_cells:  # Ensure there are empty cells to choose from
+            row, col = random.choice(empty_cells)
+            board_values[row][col] = "O"
+            print("AI places an 'O' at", chr(col + 65), row + 1)  # A1, B2, etc.
+    print_board()
+    if check_winning():
+        print("You've lost to the AI. Try again.\n")
+        reset_board()
+        play_game()
+    if check_draw():
+        print("It's a draw. It was close, try again.")
+        reset_board()
+        play_game()
+
+    return
+
+
+def minimax(board, depth, is_maximizing):
+    if is_maximizing:  # AI's turn
         best_score = float('-inf')
         for row in range(3):
             for col in range(3):
@@ -74,18 +114,8 @@ def minimax(board, depth, is_maximizing):
                     board[row][col] = " "
                     best_score = max(score, best_score)
         return best_score
-    else:
-        # Check for immediate block move
-        for row in range(3):
-            for col in range(3):
-                if board[row][col] == " ":
-                    board[row][col] = "X"
-                    if check_winning():
-                        board[row][col] = " "
-                        return -1  # Prioritize blocking
-                    board[row][col] = " "
 
-        # Continue minimax calculation if no immediate block is needed
+    else:  # Player's turn
         best_score = float('inf')
         for row in range(3):
             for col in range(3):
@@ -97,36 +127,7 @@ def minimax(board, depth, is_maximizing):
         return best_score
 
 
-def ai_turn():
-    best_score = float('-inf')
-    best_move = None
-    for row in range(3):
-        for col in range(3):
-            if board_values[row][col] == " ":
-                board_values[row][col] = "O"  # AI's tentative move
-                score = minimax(board_values, 0, False)
-                board_values[row][col] = " "  # Undo move
-                if score > best_score:
-                    best_score = score
-                    best_move = (row, col)
-
-    if best_move:
-        row, col = best_move
-        board_values[row][col] = "O"
-        print("\nAI chose:")
-        print_board()
-
-    # Check if AI has won
-    if check_winning():
-        print("AI wins!")
-        reset_board()
-        play_game()
-
-    return
-
-
 def player_turn():
-    print_board()
     selection = input("Choose a position indicating column and row, ie A1:")
     selection = selection.upper()
 
@@ -160,7 +161,10 @@ def player_turn():
         print("You have won!!! Congratulations you defeated the AI.\n")
         reset_board()
         play_game()
-
+    if check_draw():
+        print("It's a draw. It was close, try again.")
+        reset_board()
+        play_game()
     return
 
 
@@ -189,6 +193,15 @@ def check_winning():
         game_ended = True
 
     return game_ended
+
+
+# If all the spaces in the board are used returns true
+def check_draw():
+    for row in range(3):
+        for col in range(3):
+            if board_values[row][col] == " ":
+                return False
+    return True
 
 
 def validate_selection(sel):
